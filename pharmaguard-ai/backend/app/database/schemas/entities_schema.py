@@ -317,3 +317,32 @@ class ForecastingSummaryResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+# ----------------------
+# AI Action Center Schemas (Phase 3)
+# ----------------------
+class ActionDecisionRequest(BaseModel):
+    action: str = "APPROVE"  # APPROVE, MODIFY, REJECT
+    modified_items: Optional[List[OrderItem]] = None
+    modified_supplier_id: Optional[str] = None
+    notes: Optional[str] = None
+    auto_dispatch: bool = True
+    dispatch_channel: str = "EMAIL"  # EMAIL, WHATSAPP, EDI_API
+
+
+class ActionExecutionResponse(BaseModel):
+    id: str
+    pharmacy_id: str
+    supplier_id: str
+    status: str
+    total_amount_fcfa: float
+    items: List[OrderItem]
+    dispatch_channel: Optional[str] = None
+    dispatched_at: Optional[datetime] = None
+    supplier_response_status: Optional[str] = None
+    tracking_reference: Optional[str] = None
+    created_at: datetime
+    approved_at: Optional[datetime] = None
+    model_config = ConfigDict(from_attributes=True)
+
+
+

@@ -86,6 +86,7 @@ class Medicine(Base):
     category = Column(String(100), index=True)
     strength = Column(String(50), nullable=True)
     dosage_form = Column(String(50), nullable=True)  # Tablet, Capsule, Injectable, Syrup, Inhaler
+    barcode = Column(String(100), unique=True, index=True, nullable=True)  # EAN-13, UPC, DataMatrix
 
     @property
     def name(self):
@@ -269,13 +270,13 @@ class AgentActionLog(Base):
 
 
 class PurchaseOrder(Base):
-    """Purchase Order entity requiring human pharmacist authorization."""
+    """Purchase Order entity requiring human pharmacist authorization and real-world execution."""
     __tablename__ = "purchase_orders"
 
     id = Column(String(50), primary_key=True, index=True)
     pharmacy_id = Column(String(50), ForeignKey("pharmacies.id"), nullable=False, index=True)
     supplier_id = Column(String(50), ForeignKey("suppliers.id"), nullable=False)
-    status = Column(String(30), default="DRAFT")  # DRAFT, APPROVED, REJECTED, ORDERED, RECEIVED
+    status = Column(String(30), default="DRAFT")  # DRAFT, APPROVED, REJECTED, DISPATCHED, CONFIRMED, DELIVERED
     total_amount_fcfa = Column(Float, default=0.0)
     items_json = Column(Text, nullable=False)
     reasoning = Column(Text, nullable=True)
@@ -283,6 +284,13 @@ class PurchaseOrder(Base):
     approved_by = Column(String(50), nullable=True)
     created_at = Column(DateTime, default=utc_now)
     approved_at = Column(DateTime, nullable=True)
+    
+    # Action & Dispatch tracking
+    dispatch_channel = Column(String(30), nullable=True)  # EMAIL, WHATSAPP, EDI_API
+    dispatched_at = Column(DateTime, nullable=True)
+    supplier_response_status = Column(String(50), default="PENDING")  # PENDING, CONFIRMED, OUT_OF_STOCK, PARTIAL_DELIVERY, DELIVERED
+    tracking_reference = Column(String(100), nullable=True)
+    actual_delivery_date = Column(Date, nullable=True)
 
     @property
     def items(self):
