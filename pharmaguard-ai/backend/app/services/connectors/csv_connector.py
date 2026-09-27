@@ -9,11 +9,11 @@ from ...database.models.entities import Medicine, Inventory, Pharmacy, Supplier
 
 
 HEADER_SYNONYMS = {
-    "medicine_id": ["id", "code", "reference", "code_cip", "sku", "item_code"],
-    "brand_name": ["name", "brand_name", "designation", "nom", "produit", "nom_commercial", "article"],
+    "medicine_id": ["id", "code", "reference", "code_cip", "sku", "item_code", "medicine_id"],
+    "brand_name": ["name", "brand_name", "designation", "nom", "produit", "nom_commercial", "article", "medicine_name"],
     "generic_name": ["generic_name", "dci", "molecules", "principe_actif", "generic"],
     "category": ["category", "famille", "classe_therapeutique", "categorie", "therapeutic_class"],
-    "quantity": ["quantity", "stock", "quantite", "qty", "stock_actuel", "qte_en_stock"],
+    "quantity": ["quantity", "stock", "quantite", "qty", "stock_actuel", "qte_en_stock", "current_stock", "stock_quantity", "on_hand"],
     "unit_cost_fcfa": ["unit_cost", "cost", "prix_achat", "unit_cost_fcfa", "pa_ht", "buying_price", "prix_fournisseur"],
     "selling_price_fcfa": ["selling_price", "price", "prix_vente", "unit_sale_price_fcfa", "pv_ttc", "retail_price"],
     "expiry_date": ["expiry_date", "date_peremption", "peremption", "exp_date", "expiry", "date_limite"],

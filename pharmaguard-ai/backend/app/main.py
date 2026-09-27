@@ -14,6 +14,9 @@ from .api.action_center.action_center_router import router as action_center_rout
 from .api.evaluation.evaluation_router import router as evaluation_router
 from .api.intelligence.intelligence_router import router as intelligence_router
 from .api.system.system_router import router as system_router
+from .api.onboarding.onboarding_router import router as onboarding_router
+from .api.pilot.pilot_router import router as pilot_router
+from .api.dashboard.pilot_dashboard_router import router as pilot_dashboard_router
 
 # Configure logging
 logging.basicConfig(
@@ -71,6 +74,9 @@ app.include_router(action_center_router, prefix=api_prefix)
 app.include_router(evaluation_router, prefix=api_prefix)
 app.include_router(intelligence_router, prefix=api_prefix)
 app.include_router(system_router, prefix=api_prefix)
+app.include_router(onboarding_router, prefix=api_prefix)
+app.include_router(pilot_router, prefix=api_prefix)
+app.include_router(pilot_dashboard_router, prefix=api_prefix)
 
 
 @app.get("/", tags=["System"])

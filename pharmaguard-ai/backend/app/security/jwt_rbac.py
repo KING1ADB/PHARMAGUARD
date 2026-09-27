@@ -129,3 +129,6 @@ def require_role(allowed_roles: List[str]):
 def require_roles(allowed_roles: List[str]):
     return require_role(allowed_roles)
 
+
+get_current_user = get_current_active_user
+

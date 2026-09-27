@@ -30,6 +30,12 @@ class Pharmacy(Base):
     location = Column(String(255), default="Douala, Cameroon")
     contact_information = Column(String(150), nullable=True)
     verification_status = Column(String(50), default="VERIFIED")
+    
+    # Pilot & Onboarding Tracking
+    onboarding_status = Column(String(50), default="REGISTERED")  # REGISTERED, DATA_CONNECTED, AGENT_ACTIVATED, PILOT_ACTIVE
+    pilot_tier = Column(String(50), default="STANDARD_PILOT")     # STANDARD_PILOT, ENTERPRISE_PILOT
+    agent_active = Column(Boolean, default=True)
+    preferred_morning_run_time = Column(String(10), default="07:30")
     created_at = Column(DateTime, default=utc_now)
 
     users = relationship("User", back_populates="pharmacy", cascade="all, delete-orphan")
