@@ -87,6 +87,13 @@ class Medicine(Base):
     strength = Column(String(50), nullable=True)
     dosage_form = Column(String(50), nullable=True)  # Tablet, Capsule, Injectable, Syrup, Inhaler
     barcode = Column(String(100), unique=True, index=True, nullable=True)  # EAN-13, UPC, DataMatrix
+    
+    # Medicine Intelligence & Regulatory Metadata
+    storage_temperature = Column(String(50), default="15-25°C")
+    storage_conditions = Column(String(200), default="Store in cool, dry place away from direct light")
+    regulatory_schedule = Column(String(50), default="Prescription Required (Rx)")  # Rx, OTC, Controlled, List I, List II
+    atc_code = Column(String(20), nullable=True)
+    is_essential = Column(Boolean, default=True)
 
     @property
     def name(self):
@@ -108,6 +115,22 @@ class Medicine(Base):
         kwargs.pop("unit_cost_fcfa", None)
         kwargs.pop("unit_sale_price_fcfa", None)
         super().__init__(**kwargs)
+
+
+class AgentEvaluationMetric(Base):
+    """Evaluation framework store for AI agent accuracy and reliability scoring."""
+    __tablename__ = "agent_evaluation_metrics"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    pharmacy_id = Column(String(50), ForeignKey("pharmacies.id"), nullable=False, index=True)
+    metric_type = Column(String(80), nullable=False, index=True)
+    metric_value = Column(Float, nullable=False)
+    target_benchmark = Column(Float, default=0.85)
+    sample_size = Column(Integer, default=1)
+    evaluation_details = Column(Text, nullable=True)  # JSON string
+    timestamp = Column(DateTime, default=utc_now)
+
+    pharmacy = relationship("Pharmacy")
 
 
 class Supplier(Base):
@@ -140,6 +163,10 @@ class Supplier(Base):
         super().__init__(**kwargs)
 
 
+def default_expiry():
+    return date.today() + timedelta(days=365)
+
+
 class Inventory(Base):
     """Pharmacy stock and batch inventory entity."""
     __tablename__ = "inventory"
@@ -150,7 +177,7 @@ class Inventory(Base):
     supplier_id = Column(String(50), ForeignKey("suppliers.id"), nullable=True)
     quantity = Column(Integer, default=0)
     reorder_threshold = Column(Integer, default=15)
-    expiry_date = Column(Date, nullable=False, index=True)
+    expiry_date = Column(Date, default=default_expiry, nullable=False, index=True)
     unit_cost_fcfa = Column(Float, default=0.0)
     selling_price_fcfa = Column(Float, default=0.0)
     batch_number = Column(String(50), default="BATCH-DEFAULT")

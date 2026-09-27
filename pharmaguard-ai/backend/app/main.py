@@ -11,6 +11,9 @@ from .api.inventory.inventory_router import router as inventory_router
 from .api.agent.agent_router import router as agent_router
 from .api.integrations.whatsapp_router import router as whatsapp_router
 from .api.action_center.action_center_router import router as action_center_router
+from .api.evaluation.evaluation_router import router as evaluation_router
+from .api.intelligence.intelligence_router import router as intelligence_router
+from .api.system.system_router import router as system_router
 
 # Configure logging
 logging.basicConfig(
@@ -65,6 +68,9 @@ app.include_router(inventory_router, prefix=api_prefix)
 app.include_router(agent_router, prefix=api_prefix)
 app.include_router(whatsapp_router, prefix=api_prefix)
 app.include_router(action_center_router, prefix=api_prefix)
+app.include_router(evaluation_router, prefix=api_prefix)
+app.include_router(intelligence_router, prefix=api_prefix)
+app.include_router(system_router, prefix=api_prefix)
 
 
 @app.get("/", tags=["System"])
