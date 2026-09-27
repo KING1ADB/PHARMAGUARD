@@ -18,10 +18,13 @@ from ...database.schemas.entities_schema import (
     AgentMemoryResponse,
     AgentActionLogResponse,
     MorningIntelligenceReportResponse,
-    MorningCycleTriggerResponse
+    MorningCycleTriggerResponse,
+    DemandForecastDetail,
+    ForecastingSummaryResponse
 )
 from ...security.jwt_rbac import get_current_active_user, require_role, UserRole
-from ...agents.inventory_agent.morning_intelligence_agent import morning_agent
+from ...agents.orchestrator.morning_orchestrator import multi_agent_orchestrator
+from ...agents.forecasting_agent.forecasting_agent import forecasting_agent
 
 router = APIRouter(prefix="/agent", tags=["Autonomous Pharmacy Agent"])
 
@@ -29,7 +32,7 @@ router = APIRouter(prefix="/agent", tags=["Autonomous Pharmacy Agent"])
 @router.post(
     "/morning-cycle",
     response_model=MorningCycleTriggerResponse,
-    summary="Trigger Pharmacy Morning Intelligence Cycle"
+    summary="Trigger Multi-Agent Morning Intelligence Cycle"
 )
 def trigger_morning_intelligence_cycle(
     pharmacy_id: Optional[str] = None,
@@ -37,17 +40,15 @@ def trigger_morning_intelligence_cycle(
     db: Session = Depends(get_db)
 ):
     """
-    Executes the autonomous 6-step Morning Intelligence Agent cycle:
-    1. Scheduled/On-Demand trigger at pharmacy opening.
-    2. Ingests inventory stock, batch expiries, sales velocities, and supplier lead times.
-    3. Analyzes stock coverage vs supplier lead times and expiry risks.
-    4. Produces executive briefing report, prioritized alerts, and staged DRAFT purchase orders.
-    5. Awaits human-in-the-loop authorization.
-    6. Prepared to commit feedback to episodic long-term memory.
+    Executes the integrated 5-step Multi-Agent Morning Cycle:
+    1. Inventory Agent analyzes current state (batches, expiries, current stock).
+    2. Forecasting Agent predicts future state (demand curves, seasonal surges, depletion dates).
+    3. Procurement Agent evaluates optimal actions (replenishment orders & supplier selection).
+    4. Orchestrator unifies results into executive intelligence briefing & alerts.
+    5. Human Pharmacist Authorization remains mandatory.
     """
     target_pharmacy_id = pharmacy_id or current_user.pharmacy_id
     if not target_pharmacy_id:
-        # Fallback to first pharmacy in DB if user is not bound
         first_pharmacy = db.query(Pharmacy).first()
         if not first_pharmacy:
             raise HTTPException(
@@ -56,7 +57,7 @@ def trigger_morning_intelligence_cycle(
             )
         target_pharmacy_id = first_pharmacy.id
 
-    result = morning_agent.execute_morning_cycle(target_pharmacy_id, db)
+    result = multi_agent_orchestrator.execute_morning_cycle(target_pharmacy_id, db)
     return result
 
 
@@ -71,7 +72,7 @@ def get_morning_intelligence_report(
     db: Session = Depends(get_db)
 ):
     """
-    Returns the latest morning intelligence briefing and operational recommendations.
+    Returns the latest unified morning intelligence briefing and operational recommendations.
     """
     target_pharmacy_id = pharmacy_id or current_user.pharmacy_id
     if not target_pharmacy_id:
@@ -80,8 +81,74 @@ def get_morning_intelligence_report(
             raise HTTPException(status_code=404, detail="Pharmacy not found")
         target_pharmacy_id = first_pharmacy.id
 
-    result = morning_agent.execute_morning_cycle(target_pharmacy_id, db)
+    result = multi_agent_orchestrator.execute_morning_cycle(target_pharmacy_id, db)
     return result
+
+
+@router.get(
+    "/forecasts",
+    response_model=ForecastingSummaryResponse,
+    summary="Get Predictive Demand Forecasts & Depletion Analysis for All SKUs"
+)
+def get_all_demand_forecasts(
+    horizon_days: int = Query(30, ge=7, le=90, description="Forecast horizon in days"),
+    pharmacy_id: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Phase 2 Forecasting Intelligence:
+    Returns multi-horizon demand projections, seasonal disease surge factors,
+    and predicted stockout dates across the pharmacy catalog.
+    """
+    target_pharmacy_id = pharmacy_id or current_user.pharmacy_id
+    if not target_pharmacy_id:
+        first_pharmacy = db.query(Pharmacy).first()
+        if not first_pharmacy:
+            raise HTTPException(status_code=404, detail="Pharmacy not found")
+        target_pharmacy_id = first_pharmacy.id
+
+    forecast_data = forecasting_agent.analyze_future_state(
+        pharmacy_id=target_pharmacy_id,
+        db=db,
+        horizon_days=horizon_days
+    )
+    return forecast_data
+
+
+@router.get(
+    "/forecasts/{medicine_id}",
+    response_model=DemandForecastDetail,
+    summary="Get Detailed Demand & Stockout Forecast for Single Medicine"
+)
+def get_single_medicine_forecast(
+    medicine_id: str,
+    horizon_days: int = Query(30, ge=7, le=90),
+    pharmacy_id: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Retrieves deep-dive statistical and seasonal forecast for a specific medicine SKU.
+    """
+    target_pharmacy_id = pharmacy_id or current_user.pharmacy_id
+    if not target_pharmacy_id:
+        first_pharmacy = db.query(Pharmacy).first()
+        if not first_pharmacy:
+            raise HTTPException(status_code=404, detail="Pharmacy not found")
+        target_pharmacy_id = first_pharmacy.id
+
+    forecast = forecasting_agent.forecast_single_medicine(
+        pharmacy_id=target_pharmacy_id,
+        medicine_id=medicine_id,
+        db=db,
+        horizon_days=horizon_days
+    )
+
+    if forecast.get("status") == "ERROR":
+        raise HTTPException(status_code=404, detail=forecast.get("message", "Forecast failed"))
+
+    return forecast
 
 
 @router.get(
@@ -147,7 +214,7 @@ def approve_or_reject_purchase_order(
     db: Session = Depends(get_db)
 ):
     """
-    Step 5 & 6 of Autonomous Agent Cycle:
+    Step 5 of Autonomous Multi-Agent Cycle:
     - Pharmacist authorizes (APPROVE) or rejects (REJECT) a draft purchase order.
     - Commits human decision into Episodic Long-Term Memory to continuously improve future agent reasoning.
     """
@@ -157,7 +224,7 @@ def approve_or_reject_purchase_order(
             detail="Action must be either 'APPROVE' or 'REJECT'."
         )
 
-    result = morning_agent.process_pharmacist_decision(
+    result = multi_agent_orchestrator.process_pharmacist_decision(
         po_id=order_id,
         action=approval_req.action,
         pharmacist_id=current_user.id,

@@ -269,3 +269,51 @@ class AgentActionLogResponse(BaseModel):
     timestamp: datetime
     model_config = ConfigDict(from_attributes=True)
 
+
+# ----------------------
+# Forecasting Schemas (Phase 2)
+# ----------------------
+class DemandForecastDetail(BaseModel):
+    medicine_id: str
+    name: str
+    generic_name: str
+    category: Optional[str] = None
+    pharmacy_location: str
+    current_stock: int
+    base_daily_sales: float
+    trend_direction: str  # SURGING, STABLE, DECLINING
+    trend_slope: float
+    seasonal_multiplier: float
+    seasonal_description: str
+    projected_daily_demand: float
+    forecast_7d_units: float
+    forecast_14d_units: float
+    forecast_30d_units: float
+    days_until_stockout: float
+    estimated_stockout_date: str
+    supplier_lead_time_days: int
+    supplier_name: str
+    stockout_status: str  # IMMEDIATE_STOCKOUT, CRITICAL_BEFORE_DELIVERY, VULNERABLE_NEAR_TERM, SAFE_HORIZON
+    stockout_before_replenishment: bool
+    confidence_score: float
+    reasoning: str
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ForecastingSummaryResponse(BaseModel):
+    status: str
+    agent: str
+    pharmacy_id: str
+    pharmacy_name: str
+    timestamp: datetime
+    evaluated_skus_count: int
+    imminent_stockouts_count: int
+    seasonal_surges_count: int
+    total_30d_projected_demand_units: float
+    forecasts: List[DemandForecastDetail]
+    imminent_stockout_risks: List[DemandForecastDetail]
+    seasonal_surges: List[DemandForecastDetail]
+    narrative_summary: str
+    model_config = ConfigDict(from_attributes=True)
+
+

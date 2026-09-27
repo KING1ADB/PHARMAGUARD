@@ -189,3 +189,18 @@ def test_trigger_morning_cycle_and_approval_flow():
     assert audit_res.status_code == 200
     logs = audit_res.json()
     assert len(logs) >= 1
+
+    # 8. Check Phase 2 Forecasting Intelligence Endpoints
+    forecast_res = client.get("/api/v1/agent/forecasts", headers=headers)
+    assert forecast_res.status_code == 200
+    forecast_body = forecast_res.json()
+    assert forecast_body["status"] == "SUCCESS"
+    assert forecast_body["evaluated_skus_count"] >= 1
+    assert "forecasts" in forecast_body
+
+    single_forecast_res = client.get("/api/v1/agent/forecasts/MED-016", headers=headers)
+    assert single_forecast_res.status_code == 200
+    single_fc = single_forecast_res.json()
+    assert single_fc["medicine_id"] == "MED-016"
+    assert "estimated_stockout_date" in single_fc
+
