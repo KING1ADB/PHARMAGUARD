@@ -1,0 +1,16 @@
+medicine_id,name,generic_name,category,dosage_form,strength,batch_number,quantity_in_stock,unit_cost_fcfa,selling_price_fcfa,reorder_point,expiry_date,supplier_id,location_shelf
+MED-001,Coartem 20/120mg,Artemether + Lumefantrine,Antimalarial,Tablet,20mg/120mg,BATCH-2024-01A,18,1800,2500,25,2026-11-30,SUP-001,Shelf A-1
+MED-002,Amoxil 500mg,Amoxicillin,Antibiotic,Capsule,500mg,BATCH-2024-02B,8,1200,1800,30,2026-10-15,SUP-001,Shelf A-2
+MED-003,Efferalgan 1g,Paracetamol,Analgesic/Antipyretic,Effervescent Tab,1g,BATCH-2024-03C,45,900,1400,20,2027-05-20,SUP-002,Shelf B-1
+MED-004,Glucophage 500mg,Metformin,Antidiabetic,Tablet,500mg,BATCH-2024-04D,12,2200,3200,20,2026-10-28,SUP-002,Shelf B-2
+MED-005,Cipro 500mg,Ciprofloxacin,Antibiotic,Tablet,500mg,BATCH-2024-05E,5,1500,2400,25,2026-10-05,SUP-001,Shelf A-3
+MED-006,Zithromax 250mg,Azithromycin,Antibiotic,Capsule,250mg,BATCH-2024-06F,15,3500,4800,15,2026-12-15,SUP-003,Shelf A-4
+MED-007,Advil 400mg,Ibuprofen,Anti-inflammatory,Tablet,400mg,BATCH-2024-07G,32,1100,1700,20,2027-08-10,SUP-002,Shelf B-3
+MED-008,ORS Sachet,Oral Rehydration Salts,Electrolyte,Powder,20.5g,BATCH-2024-08H,60,250,500,30,2027-09-01,SUP-001,Shelf C-1
+MED-009,Ventolin Inhaler,Salbutamol,Respiratory,Inhaler,100mcg/dose,BATCH-2024-09I,6,3800,5500,12,2026-11-10,SUP-003,Shelf C-2
+MED-010,Omeprazole 20mg,Omeprazole,Gastrointestinal,Capsule,20mg,BATCH-2024-10J,22,1400,2100,25,2027-01-20,SUP-002,Shelf B-4
+MED-011,Rocephin 1g Inj,Ceftriaxone,Antibiotic,Injectable,1g,BATCH-2024-11K,4,4500,6500,15,2026-10-20,SUP-003,Shelf D-1
+MED-012,Flagyl 500mg,Metronidazole,Antiprotozoal,Tablet,500mg,BATCH-2024-12L,28,950,1500,20,2027-03-15,SUP-001,Shelf A-5
+MED-013,Cataflam 50mg,Diclofenac Potassium,Anti-inflammatory,Tablet,50mg,BATCH-2024-13M,14,1600,2400,15,2026-11-25,SUP-002,Shelf B-5
+MED-014,Lonart Forte,Artemether + Lumefantrine,Antimalarial,Tablet,80mg/480mg,BATCH-2024-14N,25,2800,3900,20,2027-06-30,SUP-001,Shelf A-1
+MED-015,Augmentin 1g,Amoxicillin + Clavulanic Acid,Antibiotic,Tablet,1g,BATCH-2024-15O,7,4200,6000,15,2026-10-18,SUP-003,Shelf A-2

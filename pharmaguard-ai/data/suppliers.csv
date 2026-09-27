@@ -1,0 +1,5 @@
+supplier_id,name,contact_person,phone,email,city,address,lead_time_days,minimum_order_value_fcfa,reliability_score,payment_terms
+SUP-001,PharmaCam Wholesalers,Dr. Jean-Paul Mbarga,+237 677 123 456,orders@pharmacam.cm,Douala,Akwa Boulevard de la Liberte,1,50000,0.95,30 Days Net
+SUP-002,Laborex Cameroon,Mme. Sandrine Ngo,+237 699 234 567,contact@laborex-cam.com,Douala,Zone Industrielle Bassa,2,75000,0.92,15 Days Net
+SUP-003,Ubipharm Central Africa,M. Patrice Eto'o,+237 670 345 678,logistics@ubipharm.cm,Douala,Bonanjo Rue Victoria,3,100000,0.88,Cash on Delivery
+SUP-004,Copharcam Distribution,Dr. Eric Fomekong,+237 655 456 789,ventes@copharcam.cm,Yaounde,Quartier Hippodrome,3,60000,0.85,30 Days Net
