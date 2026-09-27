@@ -1,8 +1,8 @@
 import pytest
-from datetime import date, timedelta
+from datetime import date
 from app.database.database import SessionLocal, init_db
-from app.database.models import Medicine, SaleRecord
-from app.services.analysis import calculate_daily_sales_velocity, get_medicine_risk_profile, analyze_inventory_health
+from app.database.models import Medicine, Inventory, SalesHistory
+from app.services.analysis import calculate_daily_sales_velocity, analyze_inventory_health
 from app.services.forecasting import forecast_medicine_demand, compute_reorder_recommendation
 
 
@@ -20,15 +20,6 @@ def test_velocity_calculation(db):
     assert velocity >= 0.0
 
 
-def test_medicine_risk_profile(db):
-    med = db.query(Medicine).filter(Medicine.id == "MED-002").first()
-    assert med is not None
-    profile = get_medicine_risk_profile(db, med)
-    assert "stockout_risk_level" in profile
-    assert "expiry_status" in profile
-    assert profile["days_until_expiry"] > 0
-
-
 def test_inventory_health_analysis(db):
     health = analyze_inventory_health(db, "PHARM-DLA-001")
     assert health["total_skus"] >= 15
@@ -38,15 +29,18 @@ def test_inventory_health_analysis(db):
 
 
 def test_demand_forecasting(db):
+    inv = db.query(Inventory).filter(Inventory.medicine_id == "MED-001").first()
     med = db.query(Medicine).filter(Medicine.id == "MED-001").first()
-    fc = forecast_medicine_demand(db, med, days_horizon=14)
+    assert inv is not None and med is not None
+    fc = forecast_medicine_demand(db, inv, med, days_horizon=14)
     assert fc["projected_demand_units"] > 0
     assert fc["seasonal_multiplier"] >= 1.0
 
 
 def test_reorder_recommendation(db):
+    inv = db.query(Inventory).filter(Inventory.medicine_id == "MED-002").first()
     med = db.query(Medicine).filter(Medicine.id == "MED-002").first()
-    rec = compute_reorder_recommendation(db, med, target_cover_days=21)
+    rec = compute_reorder_recommendation(db, inv, med, target_cover_days=21)
     assert "recommended_order_units" in rec
     assert rec["recommended_order_units"] >= 0
     assert "reasoning" in rec

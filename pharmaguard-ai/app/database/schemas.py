@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -8,12 +8,8 @@ from pydantic import BaseModel, ConfigDict, Field
 # ----------------------
 class PharmacyBase(BaseModel):
     name: str
-    city: str = "Douala"
-    country: str = "Cameroon"
-    address: Optional[str] = None
-    phone: Optional[str] = None
-    email: Optional[str] = None
-    is_connected_to_network: bool = True
+    location: str = "Douala, Cameroon"
+    contact: Optional[str] = None
 
 
 class PharmacyCreate(PharmacyBase):
@@ -33,37 +29,16 @@ class MedicineBase(BaseModel):
     name: str
     generic_name: str
     category: str
-    dosage_form: str
-    strength: str
-    batch_number: str
-    quantity_in_stock: int
-    unit_cost_fcfa: float
-    selling_price_fcfa: float
-    reorder_point: int
-    expiry_date: date
-    supplier_id: Optional[str] = None
-    location_shelf: Optional[str] = "General Shelf"
+    strength: Optional[str] = None
+    form: Optional[str] = "Tablet"
 
 
 class MedicineCreate(MedicineBase):
     id: str
-    pharmacy_id: Optional[str] = None
-
-
-class MedicineUpdate(BaseModel):
-    quantity_in_stock: Optional[int] = None
-    unit_cost_fcfa: Optional[float] = None
-    selling_price_fcfa: Optional[float] = None
-    reorder_point: Optional[int] = None
-    expiry_date: Optional[date] = None
-    location_shelf: Optional[str] = None
 
 
 class MedicineResponse(MedicineBase):
     id: str
-    pharmacy_id: str
-    created_at: datetime
-    updated_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -71,20 +46,24 @@ class MedicineRiskDetail(BaseModel):
     medicine_id: str
     name: str
     generic_name: str
-    category: str
-    quantity_in_stock: int
-    reorder_point: int
-    unit_cost_fcfa: float
-    selling_price_fcfa: float
-    expiry_date: str
-    days_until_expiry: int
-    expiry_status: str  # EXPIRED, CRITICAL (<30d), WARNING (<60d), NOTICE (<90d), OK
-    daily_sales_velocity: float
-    days_of_stock_remaining: float
-    stockout_risk_level: str  # CRITICAL, HIGH, MEDIUM, LOW, SAFE
-    supplier_id: Optional[str] = None
-    location_shelf: Optional[str] = "General Shelf"
+    current_quantity: int
+    average_daily_sales: float
+    stock_coverage_days: float
+    supplier_delivery_days: int
+    supplier_name: Optional[str] = "Default Wholesale"
+    risk_level: str  # HIGH, MEDIUM, SAFE, CRITICAL_STOCKOUT
+    confidence_score: float
+    reasoning: str
+    recommendation: str
     model_config = ConfigDict(from_attributes=True)
+
+
+class MedicineUpdate(BaseModel):
+    quantity: Optional[int] = None
+    unit_cost_fcfa: Optional[float] = None
+    selling_price_fcfa: Optional[float] = None
+    reorder_point: Optional[int] = None
+    expiry_date: Optional[date] = None
 
 
 # ----------------------
@@ -92,14 +71,13 @@ class MedicineRiskDetail(BaseModel):
 # ----------------------
 class SupplierBase(BaseModel):
     name: str
-    contact_person: Optional[str] = None
+    delivery_time: int = 2
+    reliability_score: float = 0.90
+    contact: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
-    city: str = "Douala"
-    address: Optional[str] = None
-    lead_time_days: int = 2
+    location: str = "Douala, Cameroon"
     minimum_order_value_fcfa: float = 50000.0
-    reliability_score: float = 0.90
     payment_terms: str = "30 Days Net"
 
 
@@ -109,7 +87,6 @@ class SupplierCreate(SupplierBase):
 
 class SupplierResponse(SupplierBase):
     id: str
-    created_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -120,8 +97,8 @@ class SaleRecordBase(BaseModel):
     medicine_id: str
     date: date
     quantity_sold: int
-    unit_price_fcfa: float
-    total_amount_fcfa: float
+    unit_price_fcfa: float = 0.0
+    total_amount_fcfa: float = 0.0
     customer_type: str = "Walk-in Patient"
 
 
@@ -133,7 +110,6 @@ class SaleRecordCreate(SaleRecordBase):
 class SaleRecordResponse(SaleRecordBase):
     id: str
     pharmacy_id: str
-    created_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -162,6 +138,7 @@ class PurchaseOrderResponse(BaseModel):
     total_amount_fcfa: float
     items: List[OrderItem]
     reasoning: Optional[str] = None
+    confidence_score: float = 0.90
     created_at: datetime
     approved_at: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)
@@ -179,6 +156,7 @@ class AlertResponse(BaseModel):
     title: str
     message: str
     suggested_action: Optional[str] = None
+    confidence_score: float = 0.90
     status: str
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
@@ -190,7 +168,7 @@ class AlertResponse(BaseModel):
 class AgentQueryRequest(BaseModel):
     pharmacy_id: Optional[str] = None
     query: str
-    channel: str = "web"  # web, whatsapp, api
+    channel: str = "web"
 
 
 class AgentQueryResponse(BaseModel):

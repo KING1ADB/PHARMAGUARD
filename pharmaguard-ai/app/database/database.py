@@ -6,14 +6,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Determine database path relative to project root
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-DB_PATH = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR}/pharmaguard.db")
+DB_URL = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR}/pharmaguard.db")
 
-# SQLite connection args
-connect_args = {"check_same_thread": False} if DB_PATH.startswith("sqlite") else {}
+connect_args = {"check_same_thread": False} if DB_URL.startswith("sqlite") else {}
 
-engine = create_engine(DB_PATH, echo=False, connect_args=connect_args)
+engine = create_engine(DB_URL, echo=False, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -31,23 +29,21 @@ def seed_data_from_csv(db: Session):
     """Seed initial data from data/*.csv if tables are empty."""
     import pandas as pd
     from datetime import datetime
-    from .models import Medicine, Supplier, SaleRecord, Pharmacy
+    from .models import Pharmacy, Medicine, Inventory, Supplier, SalesHistory
 
-    # Check if pharmacy exists
-    if not db.query(Pharmacy).first():
+    # 1. Seed Pharmacy
+    pharmacy_id = os.getenv("DEFAULT_PHARMACY_ID", "PHARM-DLA-001")
+    if not db.query(Pharmacy).filter(Pharmacy.id == pharmacy_id).first():
         default_pharmacy = Pharmacy(
-            id=os.getenv("DEFAULT_PHARMACY_ID", "PHARM-DLA-001"),
+            id=pharmacy_id,
             name=os.getenv("DEFAULT_PHARMACY_NAME", "Pharmacie du Centre - Douala"),
-            city=os.getenv("DEFAULT_CITY", "Douala"),
-            country=os.getenv("DEFAULT_COUNTRY", "Cameroon"),
-            phone="+237 679 000 111",
-            email="contact@pharmacieducentre.cm",
-            is_connected_to_network=True
+            location=f"{os.getenv('DEFAULT_CITY', 'Douala')}, {os.getenv('DEFAULT_COUNTRY', 'Cameroon')}",
+            contact="+237 679 000 111 / contact@pharmacieducentre.cm"
         )
         db.add(default_pharmacy)
         db.commit()
 
-    # Seed Suppliers
+    # 2. Seed Suppliers
     suppliers_csv = BASE_DIR / "data" / "suppliers.csv"
     if suppliers_csv.exists() and db.query(Supplier).count() == 0:
         df_sup = pd.read_csv(suppliers_csv)
@@ -55,59 +51,71 @@ def seed_data_from_csv(db: Session):
             sup = Supplier(
                 id=str(row["supplier_id"]),
                 name=str(row["name"]),
-                contact_person=str(row["contact_person"]),
-                phone=str(row["phone"]),
-                email=str(row["email"]),
-                city=str(row["city"]),
-                address=str(row["address"]),
-                lead_time_days=int(row["lead_time_days"]),
-                minimum_order_value_fcfa=float(row["minimum_order_value_fcfa"]),
-                reliability_score=float(row["reliability_score"]),
-                payment_terms=str(row["payment_terms"])
+                delivery_time=int(row.get("delivery_time", row.get("lead_time_days", 2))),
+                reliability_score=float(row.get("reliability_score", 0.90)),
+                contact=str(row.get("contact", row.get("contact_person", ""))),
+                phone=str(row.get("phone", "")),
+                email=str(row.get("email", "")),
+                location=str(row.get("location", row.get("address", "Douala"))),
+                minimum_order_value_fcfa=float(row.get("minimum_order_value_fcfa", 50000.0)),
+                payment_terms=str(row.get("payment_terms", "30 Days Net"))
             )
             db.add(sup)
         db.commit()
 
-    # Seed Medicines / Inventory
+    # 3. Seed Medicines & Inventory
     inventory_csv = BASE_DIR / "data" / "inventory.csv"
     if inventory_csv.exists() and db.query(Medicine).count() == 0:
         df_inv = pd.read_csv(inventory_csv)
         for _, row in df_inv.iterrows():
+            med_id = str(row["medicine_id"])
             exp_date = datetime.strptime(str(row["expiry_date"]), "%Y-%m-%d").date()
-            med = Medicine(
-                id=str(row["medicine_id"]),
-                pharmacy_id=os.getenv("DEFAULT_PHARMACY_ID", "PHARM-DLA-001"),
-                name=str(row["name"]),
-                generic_name=str(row["generic_name"]),
-                category=str(row["category"]),
-                dosage_form=str(row["dosage_form"]),
-                strength=str(row["strength"]),
-                batch_number=str(row["batch_number"]),
-                quantity_in_stock=int(row["quantity_in_stock"]),
-                unit_cost_fcfa=float(row["unit_cost_fcfa"]),
-                selling_price_fcfa=float(row["selling_price_fcfa"]),
-                reorder_point=int(row["reorder_point"]),
+
+            # Create catalog medicine if missing
+            med = db.query(Medicine).filter(Medicine.id == med_id).first()
+            if not med:
+                med = Medicine(
+                    id=med_id,
+                    name=str(row["name"]),
+                    generic_name=str(row["generic_name"]),
+                    category=str(row.get("category", "General")),
+                    strength=str(row.get("strength", "")),
+                    form=str(row.get("form", row.get("dosage_form", "Tablet")))
+                )
+                db.add(med)
+                db.flush()
+
+            # Create inventory record
+            inv = Inventory(
+                id=f"INV-{med_id}",
+                pharmacy_id=pharmacy_id,
+                medicine_id=med_id,
+                quantity=int(row.get("quantity", row.get("quantity_in_stock", 0))),
                 expiry_date=exp_date,
-                supplier_id=str(row["supplier_id"]),
+                unit_cost_fcfa=float(row.get("unit_cost_fcfa", 0.0)),
+                selling_price_fcfa=float(row.get("selling_price_fcfa", 0.0)),
+                reorder_point=int(row.get("reorder_point", 15)),
+                batch_number=str(row.get("batch_number", "BATCH-DEFAULT")),
+                supplier_id=str(row.get("supplier_id", "SUP-001")),
                 location_shelf=str(row.get("location_shelf", "General Shelf"))
             )
-            db.add(med)
+            db.add(inv)
         db.commit()
 
-    # Seed Sales History
+    # 4. Seed Sales History
     sales_csv = BASE_DIR / "data" / "sales.csv"
-    if sales_csv.exists() and db.query(SaleRecord).count() == 0:
+    if sales_csv.exists() and db.query(SalesHistory).count() == 0:
         df_sales = pd.read_csv(sales_csv)
         for _, row in df_sales.iterrows():
             sale_date = datetime.strptime(str(row["date"]), "%Y-%m-%d").date()
-            sale = SaleRecord(
+            sale = SalesHistory(
                 id=str(row["sale_id"]),
-                pharmacy_id=os.getenv("DEFAULT_PHARMACY_ID", "PHARM-DLA-001"),
+                pharmacy_id=pharmacy_id,
                 medicine_id=str(row["medicine_id"]),
-                date=sale_date,
                 quantity_sold=int(row["quantity_sold"]),
-                unit_price_fcfa=float(row["unit_price_fcfa"]),
-                total_amount_fcfa=float(row["total_amount_fcfa"]),
+                date=sale_date,
+                unit_price_fcfa=float(row.get("unit_price_fcfa", 0.0)),
+                total_amount_fcfa=float(row.get("total_amount_fcfa", 0.0)),
                 customer_type=str(row.get("customer_type", "Walk-in Patient"))
             )
             db.add(sale)

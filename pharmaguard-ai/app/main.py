@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database.database import init_db
-from .api import pharmacy, inventory, agent
+from .api import pharmacy_api, inventory_api, agent_api
 
 
 @asynccontextmanager
@@ -17,17 +17,17 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="PharmaGuard AI — Pharmacy Intelligence Agent",
+    title="PharmaGuard AI — Autonomous Pharmacy Intelligence Agent",
     description=(
         "Autonomous AI Pharmacy Operations Agent & Healthcare Network Engine. "
-        "Provides stockout prediction, expiry mitigation, automated procurement, "
-        "and connected medicine access for Cameroon & African community pharmacies."
+        "Continuously analyzes pharmacy data, detects operational risks, explains reasoning, "
+        "generates recommendations, and performs approved actions while keeping pharmacists in control."
     ),
     version="1.0.0",
     lifespan=lifespan
 )
 
-# Enable CORS for frontend dashboard and WhatsApp webhook clients
+# Enable CORS for frontend dashboard and webhook clients
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -37,9 +37,9 @@ app.add_middleware(
 )
 
 # Include API Routers
-app.include_router(pharmacy.router)
-app.include_router(inventory.router)
-app.include_router(agent.router)
+app.include_router(pharmacy_api.router)
+app.include_router(inventory_api.router)
+app.include_router(agent_api.router)
 
 
 @app.get("/")
@@ -47,7 +47,8 @@ def root():
     return {
         "system": "PharmaGuard AI Agent Engine",
         "status": "ONLINE",
-        "version": "1.0.0",
+        "role": "Autonomous Pharmacy Intelligence Employee",
+        "decision_loop": "Observe → Analyze → Reason → Recommend → Request Approval → Act → Learn",
         "city": "Douala",
         "country": "Cameroon",
         "docs_url": "/docs",

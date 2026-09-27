@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: pharmaguard_agent_api
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://pharmaguard:pharmaguard_secret@db:5432/pharmaguard_db
+      - ENVIRONMENT=production
+      - DEBUG=False
+    depends_on:
+      - db
+    volumes:
+      - ./data:/app/data
+
+  db:
+    image: postgres:16-alpine
+    container_name: pharmaguard_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: pharmaguard
+      POSTGRES_PASSWORD: pharmaguard_secret
+      POSTGRES_DB: pharmaguard_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

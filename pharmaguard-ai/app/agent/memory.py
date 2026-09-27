@@ -1,5 +1,9 @@
 from typing import Dict, List, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
+
+
+def utc_iso():
+    return datetime.now(timezone.utc).isoformat()
 
 
 class AgentMemory:
@@ -20,7 +24,7 @@ class AgentMemory:
     def add_message(self, role: str, content: str, metadata: Optional[Dict[str, Any]] = None):
         """Records a user or agent interaction."""
         entry = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": utc_iso(),
             "role": role,
             "content": content,
             "metadata": metadata or {}
@@ -32,7 +36,7 @@ class AgentMemory:
     def record_cycle(self, cycle_data: Dict[str, Any]):
         """Records a completed autonomous decision cycle."""
         self._cycle_history.append({
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": utc_iso(),
             **cycle_data
         })
         if len(self._cycle_history) > 20:
@@ -53,5 +57,4 @@ class AgentMemory:
         self._cycle_history.clear()
 
 
-# Global in-process memory singleton
 global_memory = AgentMemory()

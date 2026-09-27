@@ -43,15 +43,15 @@ def test_agent_cycle_trigger():
 
 
 def test_agent_query_endpoint():
-    response = client.post("/agent/query", json={"query": "What are the expiring medicines?"})
+    response = client.post("/agent/query", json={"query": "Analyze this pharmacy."})
     assert response.status_code == 200
     data = response.json()
     assert "response" in data
     assert len(data["response"]) > 10
 
 
-def test_agent_briefing_endpoint():
-    response = client.get("/agent/briefing")
+def test_agent_report_endpoint():
+    response = client.get("/agent/report")
     assert response.status_code == 200
     data = response.json()
     assert "briefing_markdown" in data
