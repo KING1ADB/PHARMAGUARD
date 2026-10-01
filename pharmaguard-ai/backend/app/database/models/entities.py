@@ -68,6 +68,12 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     role = Column(String(50), default="PHARMACIST")  # OWNER, PHARMACIST, ASSISTANT, AUDITOR
     permissions = Column(Text, default='["READ", "WRITE", "APPROVE_ORDERS"]')
+    is_verified = Column(Boolean, default=True)
+    verification_token = Column(String(100), nullable=True)
+    reset_token = Column(String(100), nullable=True)
+    reset_token_expiry = Column(DateTime, nullable=True)
+    mfa_enabled = Column(Boolean, default=False)
+    mfa_secret = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=utc_now)
 
     pharmacy = relationship("Pharmacy", back_populates="users")

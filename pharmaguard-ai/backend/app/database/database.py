@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from dotenv import load_dotenv
+
+from ..core.config import settings
 from .models.entities import (
     Base,
     Pharmacy,
@@ -21,10 +23,21 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = BASE_DIR / "data"
 
-DB_URL = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR}/pharmaguard_prod.db")
-connect_args = {"check_same_thread": False} if DB_URL.startswith("sqlite") else {}
+DB_URL = settings.DATABASE_URL
+if DB_URL.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+    engine = create_engine(DB_URL, echo=settings.DEBUG, connect_args=connect_args)
+else:
+    engine = create_engine(
+        DB_URL,
+        echo=settings.DEBUG,
+        pool_size=settings.DB_POOL_SIZE,
+        max_overflow=settings.DB_MAX_OVERFLOW,
+        pool_timeout=settings.DB_POOL_TIMEOUT,
+        pool_recycle=settings.DB_POOL_RECYCLE,
+        pool_pre_ping=True
+    )
 
-engine = create_engine(DB_URL, echo=False, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
@@ -159,10 +172,11 @@ def seed_production_data(db: Session):
 
 
 def init_db():
-    """Initializes the schema tables and seeds initial master data."""
+    """Initializes the database schema tables. Only seeds demo data in non-production environments."""
     Base.metadata.create_all(bind=engine)
-    db = SessionLocal()
-    try:
-        seed_production_data(db)
-    finally:
-        db.close()
+    if settings.APP_ENV in ["development", "test", "staging"]:
+        db = SessionLocal()
+        try:
+            seed_production_data(db)
+        finally:
+            db.close()

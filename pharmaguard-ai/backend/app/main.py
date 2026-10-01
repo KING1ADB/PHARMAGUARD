@@ -24,10 +24,12 @@ from .api.demo.demo_router import router as demo_router
 from .api.pilot_metrics.pilot_measurement_router import router as pilot_measurement_router
 from .api.reports.pilot_reporting_router import router as pilot_reporting_router
 from .api.evidence.evidence_router import router as evidence_router
+from .api.monitoring.monitoring_router import router as monitoring_router
+from .core.config import settings
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=getattr(logging, settings.LOG_LEVEL, logging.INFO),
     format="%(asctime)s - [%(levelname)s] - %(name)s - %(message)s"
 )
 logger = logging.getLogger("PharmaGuard")
@@ -35,11 +37,11 @@ logger = logging.getLogger("PharmaGuard")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Initialize Database tables & seed initial CSV datasets
-    logger.info("Initializing PharmaGuard AI Database and Seeding initial catalogs...")
+    # Startup: Initialize Database tables (clean in production; seeded in dev)
+    logger.info(f"Initializing PharmaGuard AI Database [Environment: {settings.APP_ENV}]...")
     init_db()
     
-    # Start the Autonomous Background Scheduler (Morning Intelligence Agent @ 07:30 AM)
+    # Start the Autonomous Background Scheduler (Morning Intelligence Agent)
     logger.info("Starting Autonomous Workflow Scheduler (Morning Intelligence Agent)...")
     start_scheduler()
     
@@ -57,21 +59,21 @@ app = FastAPI(
         "Continuously observes stock levels, reasons on stock coverage and expiry risks, stages procurement, "
         "and learns from pharmacist decisions."
     ),
-    version="1.0.0",
+    version=settings.APP_VERSION,
     lifespan=lifespan
 )
 
-# Enable CORS for future frontend integrations
+# Enable CORS using production settings
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.CORS_ORIGINS if settings.CORS_ORIGINS else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Register API routers with v1 prefix
-api_prefix = "/api/v1"
+# Register Core Production API routers with v1 prefix
+api_prefix = settings.API_V1_PREFIX
 app.include_router(auth_router, prefix=api_prefix)
 app.include_router(pharmacy_router, prefix=api_prefix)
 app.include_router(inventory_router, prefix=api_prefix)
@@ -86,20 +88,26 @@ app.include_router(pilot_router, prefix=api_prefix)
 app.include_router(pilot_dashboard_router, prefix=api_prefix)
 app.include_router(command_center_router, prefix=api_prefix)
 app.include_router(interaction_router, prefix=api_prefix)
-app.include_router(simulation_router, prefix=api_prefix)
-app.include_router(demo_router, prefix=api_prefix)
 app.include_router(pilot_measurement_router, prefix=api_prefix)
 app.include_router(pilot_reporting_router, prefix=api_prefix)
 app.include_router(evidence_router, prefix=api_prefix)
+app.include_router(monitoring_router, prefix=api_prefix)
+
+# Conditionally load simulation & demo sandboxes only when enabled (dev/staging/test)
+if settings.ENABLE_SIMULATION_FEATURES:
+    logger.info("Simulation and Demonstration feature routers enabled for test/sandbox mode.")
+    app.include_router(simulation_router, prefix=api_prefix)
+    app.include_router(demo_router, prefix=api_prefix)
 
 
 @app.get("/", tags=["System"])
 def root():
     return {
         "service": "PharmaGuard AI Platform",
+        "environment": settings.APP_ENV,
         "status": "OPERATIONAL",
         "mode": "AUTONOMOUS_PHARMACY_INTELLIGENCE_AGENT",
-        "version": "1.0.0",
+        "version": settings.APP_VERSION,
         "documentation": "/docs"
     }
 
@@ -108,6 +116,7 @@ def root():
 def health_check():
     return {
         "status": "HEALTHY",
+        "environment": settings.APP_ENV,
         "agent_status": "ACTIVE",
         "scheduler_status": "RUNNING"
     }
