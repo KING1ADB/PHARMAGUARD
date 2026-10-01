@@ -21,6 +21,9 @@ from .api.command_center.command_center_router import router as command_center_r
 from .api.interaction.interaction_router import router as interaction_router
 from .api.simulation.simulation_router import router as simulation_router
 from .api.demo.demo_router import router as demo_router
+from .api.pilot_metrics.pilot_measurement_router import router as pilot_measurement_router
+from .api.reports.pilot_reporting_router import router as pilot_reporting_router
+from .api.evidence.evidence_router import router as evidence_router
 
 # Configure logging
 logging.basicConfig(
@@ -85,6 +88,9 @@ app.include_router(command_center_router, prefix=api_prefix)
 app.include_router(interaction_router, prefix=api_prefix)
 app.include_router(simulation_router, prefix=api_prefix)
 app.include_router(demo_router, prefix=api_prefix)
+app.include_router(pilot_measurement_router, prefix=api_prefix)
+app.include_router(pilot_reporting_router, prefix=api_prefix)
+app.include_router(evidence_router, prefix=api_prefix)
 
 
 @app.get("/", tags=["System"])
