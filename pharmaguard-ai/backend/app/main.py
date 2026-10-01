@@ -25,6 +25,7 @@ from .api.pilot_metrics.pilot_measurement_router import router as pilot_measurem
 from .api.reports.pilot_reporting_router import router as pilot_reporting_router
 from .api.evidence.evidence_router import router as evidence_router
 from .api.monitoring.monitoring_router import router as monitoring_router
+from .api.cloud_scheduler.scheduler_router import scheduler_router
 from .core.config import settings
 
 # Configure logging
@@ -92,6 +93,7 @@ app.include_router(pilot_measurement_router, prefix=api_prefix)
 app.include_router(pilot_reporting_router, prefix=api_prefix)
 app.include_router(evidence_router, prefix=api_prefix)
 app.include_router(monitoring_router, prefix=api_prefix)
+app.include_router(scheduler_router, prefix=api_prefix)
 
 # Conditionally load simulation & demo sandboxes only when enabled (dev/staging/test)
 if settings.ENABLE_SIMULATION_FEATURES:

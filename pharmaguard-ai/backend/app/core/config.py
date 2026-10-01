@@ -74,5 +74,25 @@ class Settings(BaseModel):
     SENTRY_DSN: Optional[str] = os.getenv("SENTRY_DSN", None)
     ENABLE_PROMETHEUS_METRICS: bool = os.getenv("ENABLE_PROMETHEUS_METRICS", "true").lower() in ["true", "1"]
 
+    # Google Cloud Platform (GCP) Production Architecture
+    GCP_PROJECT_ID: str = os.getenv("GCP_PROJECT_ID", "pharmaguard-ai-prod")
+    GCP_REGION: str = os.getenv("GCP_REGION", "europe-west1")
+    GCP_CLOUD_SQL_INSTANCE: Optional[str] = os.getenv("GCP_CLOUD_SQL_INSTANCE", None)
+    
+    # Memorystore / Redis Configuration
+    REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    REDIS_HOST: str = os.getenv("REDIS_HOST", "127.0.0.1")
+    REDIS_PORT: int = int(os.getenv("REDIS_PORT", "6379"))
+    REDIS_PASSWORD: Optional[str] = os.getenv("REDIS_PASSWORD", None)
+
+    # Cloud Storage (GCS) Configuration
+    GCS_BUCKET_NAME: str = os.getenv("GCS_BUCKET_NAME", "pharmaguard-prod-storage")
+    GCS_BACKUP_BUCKET: str = os.getenv("GCS_BACKUP_BUCKET", "pharmaguard-prod-backups")
+    USE_LOCAL_STORAGE_FALLBACK: bool = os.getenv("USE_LOCAL_STORAGE_FALLBACK", "true").lower() in ["true", "1"]
+
+    # Google Cloud Scheduler & Secret Manager
+    CLOUD_SCHEDULER_SECRET: str = os.getenv("CLOUD_SCHEDULER_SECRET", "pharmaguard_cloud_scheduler_auth_secret_2026")
+    USE_GCP_SECRET_MANAGER: bool = os.getenv("USE_GCP_SECRET_MANAGER", "false").lower() in ["true", "1"]
+
 
 settings = Settings()

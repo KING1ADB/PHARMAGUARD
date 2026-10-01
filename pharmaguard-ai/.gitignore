@@ -4,4 +4,8 @@ __pycache__/
 *.pyd
 .pytest_cache/
 pharmaguard.db
+pharmaguard_prod.db
+test_ci.db
 .env.local
+backend/data/gcs_local_storage/
+

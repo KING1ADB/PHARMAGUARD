@@ -1,0 +1,75 @@
+steps:
+  # 1. Run Automated Unit & Integration Tests
+  - name: 'python:3.11-slim'
+    id: 'run-tests'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-asyncio httpx
+        cd backend
+        python -m pytest -v --tb=short
+
+  # 2. Build Container Image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-image'
+    args:
+      - 'build'
+      - '-t'
+      - '$_REGION-docker.pkg.dev/$PROJECT_ID/$_GAR_REPO/pharmaguard-backend:$COMMIT_SHA'
+      - '-t'
+      - '$_REGION-docker.pkg.dev/$PROJECT_ID/$_GAR_REPO/pharmaguard-backend:latest'
+      - '-f'
+      - 'Dockerfile'
+      - '.'
+
+  # 3. Push Image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-image'
+    args:
+      - 'push'
+      - '$_REGION-docker.pkg.dev/$PROJECT_ID/$_GAR_REPO/pharmaguard-backend:$COMMIT_SHA'
+
+  # 4. Execute Cloud SQL Database Migrations via Cloud Run Job
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'run-migrations'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Executing database migration check..."
+        # If migration job exists, execute it
+        gcloud run jobs execute pharmaguard-db-migrate --region=$_REGION --wait || echo "No migration job defined, proceeding to service deployment."
+
+  # 5. Deploy New Revision to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-cloud-run'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - '$_SERVICE_NAME'
+      - '--image=$_REGION-docker.pkg.dev/$PROJECT_ID/$_GAR_REPO/pharmaguard-backend:$COMMIT_SHA'
+      - '--region=$_REGION'
+      - '--platform=managed'
+      - '--min-instances=1'
+      - '--max-instances=20'
+      - '--cpu=2'
+      - '--memory=4Gi'
+      - '--concurrency=80'
+      - '--set-env-vars=APP_ENV=production,LOG_LEVEL=INFO,ENABLE_SIMULATION_FEATURES=false'
+      - '--set-secrets=DATABASE_URL=PHARMAGUARD_DATABASE_URL:latest,JWT_SECRET_KEY=PHARMAGUARD_JWT_SECRET:latest,WHATSAPP_ACCESS_TOKEN=PHARMAGUARD_WHATSAPP_TOKEN:latest'
+
+substitutions:
+  _REGION: 'europe-west1'
+  _GAR_REPO: 'pharmaguard-repo'
+  _SERVICE_NAME: 'pharmaguard-backend'
+
+images:
+  - '$_REGION-docker.pkg.dev/$PROJECT_ID/$_GAR_REPO/pharmaguard-backend:$COMMIT_SHA'
+  - '$_REGION-docker.pkg.dev/$PROJECT_ID/$_GAR_REPO/pharmaguard-backend:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

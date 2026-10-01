@@ -23,6 +23,10 @@ class AgentReliabilityMonitor:
         self.failed_agent_runs = 0
         self.tool_latencies: List[float] = []
 
+    def _get_uptime_seconds(self) -> float:
+        """Returns uptime in seconds."""
+        return round(time.time() - self.start_time, 1)
+
     def record_agent_cycle(self, duration_seconds: float, success: bool = True):
         """Records an autonomous cycle run and its execution latency."""
         self.total_agent_runs += 1
@@ -31,6 +35,10 @@ class AgentReliabilityMonitor:
         self.tool_latencies.append(duration_seconds)
         if len(self.tool_latencies) > 500:
             self.tool_latencies = self.tool_latencies[-500:]
+
+    def record_agent_execution(self, agent_name: str, duration_ms: float, success: bool = True, error_message: Optional[str] = None):
+        """Records an agent execution for reliability telemetry."""
+        self.record_agent_cycle(duration_seconds=duration_ms / 1000.0 if duration_ms else 0.1, success=success)
 
     def get_system_reliability_metrics(self, db: Session) -> Dict[str, Any]:
         """
