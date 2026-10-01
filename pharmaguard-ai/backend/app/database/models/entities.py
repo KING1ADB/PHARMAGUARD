@@ -166,6 +166,8 @@ class Supplier(Base):
             kwargs["delivery_time"] = kwargs.pop("lead_time_days")
         if "contact_email" in kwargs:
             kwargs["email"] = kwargs.pop("contact_email")
+        if "contact_person" in kwargs:
+            kwargs["contact"] = kwargs.pop("contact_person")
         super().__init__(**kwargs)
 
 
@@ -198,6 +200,10 @@ class Inventory(Base):
     def reorder_point(self):
         return self.reorder_threshold
 
+    @property
+    def reorder_level(self):
+        return self.reorder_threshold
+
     pharmacy = relationship("Pharmacy", back_populates="inventory_items")
     medicine = relationship("Medicine", back_populates="inventory_items")
     supplier = relationship("Supplier", back_populates="inventory_items")
@@ -207,6 +213,10 @@ class Inventory(Base):
             kwargs["quantity"] = kwargs.pop("quantity_in_stock")
         if "reorder_point" in kwargs:
             kwargs["reorder_threshold"] = kwargs.pop("reorder_point")
+        if "reorder_level" in kwargs:
+            kwargs["reorder_threshold"] = kwargs.pop("reorder_level")
+        if "unit_sale_price_fcfa" in kwargs:
+            kwargs["selling_price_fcfa"] = kwargs.pop("unit_sale_price_fcfa")
         if "expiry_date" not in kwargs and "days_until_expiry" in kwargs:
             kwargs["expiry_date"] = date.today() + timedelta(days=kwargs.pop("days_until_expiry"))
         else:
@@ -291,7 +301,7 @@ class AgentActionLog(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     pharmacy_id = Column(String(50), ForeignKey("pharmacies.id"), nullable=True, index=True)
-    agent = Column(String(100), nullable=False)
+    agent = Column(String(100), nullable=False, default="PharmaGuardAutonomousAgent")
     action = Column(String(100), nullable=False)
     reasoning = Column(Text, nullable=False)
     confidence_score = Column(Float, default=0.90)
@@ -299,7 +309,28 @@ class AgentActionLog(Base):
     timestamp = Column(DateTime, default=utc_now)
     metadata_json = Column(Text, nullable=True)
 
+    @property
+    def action_type(self):
+        return self.action
+
+    @property
+    def details(self):
+        return self.reasoning
+
     pharmacy = relationship("Pharmacy", back_populates="action_logs")
+
+    def __init__(self, **kwargs):
+        if "action_type" in kwargs:
+            kwargs["action"] = kwargs.pop("action_type")
+        if "details" in kwargs:
+            kwargs["reasoning"] = kwargs.pop("details")
+        if "agent" not in kwargs:
+            kwargs["agent"] = "PharmaGuardAutonomousAgent"
+        if "reasoning" not in kwargs:
+            kwargs["reasoning"] = "Autonomous operational log"
+        if "id" in kwargs and isinstance(kwargs["id"], str):
+            kwargs.pop("id")
+        super().__init__(**kwargs)
 
 
 class PurchaseOrder(Base):
@@ -332,8 +363,17 @@ class PurchaseOrder(Base):
         except Exception:
             return []
 
+    @property
+    def notes(self):
+        return self.reasoning
+
     pharmacy = relationship("Pharmacy", back_populates="purchase_orders")
     supplier = relationship("Supplier", back_populates="purchase_orders")
+
+    def __init__(self, **kwargs):
+        if "notes" in kwargs:
+            kwargs["reasoning"] = kwargs.pop("notes")
+        super().__init__(**kwargs)
 
 
 class Alert(Base):
@@ -352,5 +392,17 @@ class Alert(Base):
     status = Column(String(30), default="ACTIVE")  # ACTIVE, RESOLVED, DISMISSED
     created_at = Column(DateTime, default=utc_now)
 
+    @property
+    def recommended_action(self):
+        return self.suggested_action
+
     pharmacy = relationship("Pharmacy", back_populates="alerts")
     medicine = relationship("Medicine", back_populates="alerts")
+
+    def __init__(self, **kwargs):
+        if "recommended_action" in kwargs:
+            kwargs["suggested_action"] = kwargs.pop("recommended_action")
+        if "title" not in kwargs:
+            a_type = kwargs.get("alert_type", "OPERATIONAL_ALERT")
+            kwargs["title"] = str(a_type).replace("_", " ").title()
+        super().__init__(**kwargs)

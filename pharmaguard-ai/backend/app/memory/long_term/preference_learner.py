@@ -115,3 +115,37 @@ class PharmacyPreferenceLearner:
             "chosen_supplier_id": chosen_supplier_id,
             "applied_learning": adapted_quantity != base_order_quantity or chosen_supplier_id != default_supplier_id
         }
+
+    @staticmethod
+    def record_preference(
+        pharmacy_id: str,
+        preference_key: str,
+        preference_value: Any,
+        confidence_score: float,
+        source: str,
+        db: Session
+    ) -> Dict[str, Any]:
+        """
+        Explicitly records a verified operational preference into long-term memory.
+        """
+        mem = EpisodicMemoryManager.record_decision_feedback(
+            pharmacy_id=pharmacy_id,
+            memory_type="EXPLICIT_PREFERENCE",
+            feedback_data={
+                "preference_key": preference_key,
+                "preference_value": preference_value,
+                "source": source
+            },
+            confidence=confidence_score,
+            db=db
+        )
+        return {
+            "status": "RECORDED",
+            "memory_id": mem.id,
+            "preference_key": preference_key,
+            "preference_value": preference_value,
+            "confidence": confidence_score
+        }
+
+
+preference_learner = PharmacyPreferenceLearner()

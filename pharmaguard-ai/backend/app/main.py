@@ -17,6 +17,10 @@ from .api.system.system_router import router as system_router
 from .api.onboarding.onboarding_router import router as onboarding_router
 from .api.pilot.pilot_router import router as pilot_router
 from .api.dashboard.pilot_dashboard_router import router as pilot_dashboard_router
+from .api.command_center.command_center_router import router as command_center_router
+from .api.interaction.interaction_router import router as interaction_router
+from .api.simulation.simulation_router import router as simulation_router
+from .api.demo.demo_router import router as demo_router
 
 # Configure logging
 logging.basicConfig(
@@ -77,6 +81,10 @@ app.include_router(system_router, prefix=api_prefix)
 app.include_router(onboarding_router, prefix=api_prefix)
 app.include_router(pilot_router, prefix=api_prefix)
 app.include_router(pilot_dashboard_router, prefix=api_prefix)
+app.include_router(command_center_router, prefix=api_prefix)
+app.include_router(interaction_router, prefix=api_prefix)
+app.include_router(simulation_router, prefix=api_prefix)
+app.include_router(demo_router, prefix=api_prefix)
 
 
 @app.get("/", tags=["System"])
